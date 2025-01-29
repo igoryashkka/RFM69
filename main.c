@@ -61,7 +61,7 @@ void main(void)
    SPI_Cmd(ENABLE);
    
    GPIO_Init(GPIOA, GPIO_PIN_3, GPIO_MODE_OUT_PP_HIGH_SLOW); // NSS
-   
+    GPIO_Init(GPIOB, GPIO_PIN_5, GPIO_MODE_OUT_PP_HIGH_SLOW);
    // ---------------------------------------------
    // GPIO 
     GPIO_Init(GPIOC, GPIO_PIN_6, GPIO_MODE_OUT_PP_LOW_FAST);
@@ -89,8 +89,14 @@ void main(void)
     send(DEVICE_ID, data_to_transmit, sizeof(data_to_transmit),FALSE,TRUE);
     //GPIO_ToggleBits(GPIOC, (GPIO_Pin_TypeDef)GPIO_Pin_6);
     //waitForResponce();
-    
+    GPIO_WriteReverse(GPIOB,GPIO_PIN_5);
     Delay(0xFFFF);
+      Delay(0xFFFF);
+       Delay(0xFFFF);
+      Delay(0xFFFF);
+       Delay(0xFFFF);
+      Delay(0xFFFF);
+       Delay(0xFFFF);
       Delay(0xFFFF);
  
          
