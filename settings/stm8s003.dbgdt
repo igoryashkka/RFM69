@@ -122,7 +122,7 @@
                     <item>re_lsb</item>
                     <item>re_msb</item>
                     <item>_reg_val_28</item>
-                    <item></item>
+                    <item />
                 </expressions>
                 <col-names>
                     <item>Expression</item>
