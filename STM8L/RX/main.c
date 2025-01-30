@@ -40,6 +40,8 @@
 #define HUB_ID   0xAB
    uint8_t re_msb =  0;
 uint8_t re_lsb =  0;
+    uint8_t button_state;
+    uint8_t button_code;
 
 void main(void)
 {
@@ -74,19 +76,10 @@ CLK_SYSCLKSourceConfig(CLK_SYSCLKSource_HSI);
    // ---------------------------------------------
    // GPIO 
     GPIO_Init(GPIOC, GPIO_Pin_6, GPIO_Mode_Out_PP_Low_Fast);
-    GPIO_Init(GPIOC, GPIO_Pin_5, GPIO_Mode_Out_PP_Low_Fast);
+    GPIO_Init(GPIOC, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5, GPIO_Mode_Out_PP_Low_Fast); // 4 LED
    //  GPIO_Init(GPIOD, GPIO_Pin_4, GPIO_MODE_OUT_PP_LOW_FAST);
    
-  // GPIO_WriteHigh(GPIOD,GPIO_PIN_5);
-   Delay(0xFFFF);Delay(0xFFFF);
-   //GPIO_WriteLow(GPIOD,GPIO_PIN_5);
-     
-     SPIWrite(0x03,0X22);
-   SPIWrite(0x04,0X33);
-  
-   re_lsb =  SPIRead(0x04);
-   re_msb =  SPIRead(0x03);
- //char RxBuffer[150] = {0};
+
   char RxBuffer[150] = {0};
   
   
@@ -110,10 +103,34 @@ CLK_SYSCLKSourceConfig(CLK_SYSCLKSource_HSI);
     receiveBegin();
   while (1)
   {
-    //send(DEVICE_ID, (uint8_t*) &data_to_transmit, sizeof(data_to_transmit),FALSE,TRUE);
-    //GPIO_ToggleBits(GPIOC, (GPIO_Pin_TypeDef)GPIO_Pin_6);
-    waitForResponce(RxBuffer);
-    //GPIO_WriteReverse(GPIO_)
+  
+    button_state = waitForResponce(RxBuffer);
+    switch (button_state) {
+        case 0x01:
+            GPIO_SetBits(GPIOC, GPIO_Pin_2);
+            GPIO_ResetBits(GPIOC, GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5);
+                button_code = 0x01;
+            break;
+        case 0x02:
+            GPIO_SetBits(GPIOC, GPIO_Pin_3);
+            GPIO_ResetBits(GPIOC, GPIO_Pin_2 | GPIO_Pin_4 | GPIO_Pin_5);
+                button_code = 0x02;
+            break;
+        case 0x03:
+            GPIO_SetBits(GPIOC, GPIO_Pin_4);
+            GPIO_ResetBits(GPIOC, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_5);
+                button_code = 0x03;
+            break;
+        case 0x04:
+            GPIO_SetBits(GPIOC, GPIO_Pin_5);
+            GPIO_ResetBits(GPIOC, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4);
+                 button_code = 0x04;
+            break;
+        default:
+            //GPIO_ResetBits(GPIOC, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5);
+            break;
+    }
+    nop();
     Delay(0xFFFF);
 
 

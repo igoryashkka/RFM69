@@ -1,32 +1,25 @@
-/*
- * rfm69.h
- *
- *  Created on: Aug 2, 2021
- *      Author: Vitech-UA
- */
+#ifndef __RFM_H
+#define __RFM_H
 
-#ifndef INC_RFM69_H_
-#define INC_RFM69_H_
-
-#include "stm8l15x.h"
 #include "rfm69reg.h"
+#include "stm8l15x.h"
 
-#define RFM69_SELECT_GPIO RFM_NSEL_GPIO_Port
-#define RFM69_SELECT_PIN RFM_NSEL_Pin
+#define MODE_STDBY           0x04
+#define MODE_TX              0x0C
+#define MODE_RX              0x10
 
-#define RFM69_RESET_GPIO RFM_RESET_GPIO_Port
-#define RFM69_RESET_PIN RFM_RESET_Pin
 
-#define RFM69_CS_PIN         GPIO_Pin_3
-#define RFM69_CS_PORT        GPIOB
+#define RF69_315MHZ            31 // non trivial values to avoid misconfiguration
+#define RF69_433MHZ            43
+#define RF69_868MHZ            86
+#define RF69_915MHZ            91
+#define HUB_ID   0xAB
+#define DEVICE_ID   0xCB
+//------------
+#define NETWORKID     0x10  
+#define FREQUENCY   RF69_868MHZ
 
-#define RFM69_RESET_PIN      GPIO_Pin_4
-#define RFM69_RESET_PORT     GPIOB
 
-#define NSS_PIN_RESET GPIO_ResetBits(RFM69_CS_PORT, RFM69_CS_PIN)//GPIOB->ODR &= (uint8_t)(~GPIO_Pin_3)//; 
-#define NSS_PIN_SET   GPIO_SetBits(RFM69_CS_PORT, RFM69_CS_PIN)//GPIOB->ODR |= GPIO_Pin_3;
-
-//#define rfm_spi hspi1
 #define RFM69_XO               32000000    // /< Internal clock frequency [Hz]
 #define RFM69_FSTEP            61.03515625 // /< Step width of synthesizer [Hz]
 #define CSMA_LIMIT              -90 // upper RX signal sensitivity threshold in dBm for carrier sense access
@@ -46,36 +39,36 @@
 #define RF69_CSMA_LIMIT_MS 1000
 #define RF69_BROADCAST_ADDR 255
 
+#define RFM69_RESET_PIN      GPIO_PIN_4
+#define RFM69_RESET_PORT     GPIOB
 
-// available frequency bands
-#define RF69_315MHZ            31 // non trivial values to avoid misconfiguration
-#define RF69_433MHZ            43
-#define RF69_868MHZ            86
-#define RF69_915MHZ            91
+#define SPI_CS_PORT             GPIOB
+#define SPI_CS_PIN              GPIO_Pin_3
 
-#define RF69_MAX_DATA_LEN       61
+#define SPI_CS_Low              GPIO_ResetBits(SPI_CS_PORT , SPI_CS_PIN)
 
+#define SPI_CS_High             GPIO_SetBits(SPI_CS_PORT, SPI_CS_PIN)
 
 unsigned char SPICmd8bit(unsigned char WrPara);
 unsigned char SPIRead(unsigned char adr);
-void SPIWrite(unsigned char adr, unsigned char WrPara); 
-
-
-
+void SPIWrite(unsigned char adr, unsigned char WrPara);
 bool rfm69_init(uint8_t freqBand, uint8_t nodeID, uint8_t networkID);
-void setMode(uint8_t newMode, bool waitForReady);
-void setAddress(uint8_t addr);
+uint32_t send(uint8_t toAddress, uint8_t *buffer, uint16_t bufferSize,bool requestACK, bool sendACK);
 
 
 void setHighPowerRegs(bool onOff);
 void setPowerLevel(uint8_t powerLevel);
-int16_t readRSSI(bool forceTrigger);
-bool read_data(char *data);
-bool waitForResponce(char *data );
+void setAddress(uint8_t addr);
+void setMode(uint8_t newMode, bool waitForReady);
 void receiveBegin();
-uint32_t send(uint8_t toAddress, uint8_t *buffer, uint16_t bufferSize,bool requestACK, bool sendACK);
+
+
+uint8_t waitForResponce(char *data);
+uint8_t readData(char *data);
 
 void Delay(uint16_t nCount);
 
 
-#endif /* INC_RFM69_H_ */
+void Delay(uint16_t nCount);
+
+#endif /* __RFM_H */

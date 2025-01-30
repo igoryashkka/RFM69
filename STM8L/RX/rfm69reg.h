@@ -1,3 +1,10 @@
+/*
+ * rfm69_registers.h
+ *
+ *  Created on: Aug 3, 2021
+ *      Author: Vitech-UA
+ */
+
 #ifndef INC_RFM69_REGISTERS_H_
 #define INC_RFM69_REGISTERS_H_
 
@@ -134,6 +141,10 @@
 #define RF_BITRATEMSB_38400           0x03
 #define RF_BITRATELSB_38400           0x41
 
+   
+#define RF_BITRATEMSB_84000           0x01
+#define RF_BITRATELSB_84000           0x7D
+   
 #define RF_BITRATEMSB_38323           0x03
 #define RF_BITRATELSB_38323           0x43
 

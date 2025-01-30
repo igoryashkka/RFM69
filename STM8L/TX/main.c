@@ -37,7 +37,9 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
-uint8_t txData[] = {0x99,0x99,0x88,0x88,0x99,0x99}; 
+/* Private variables ---------------------------------------------------------*/
+ char data_to_transmit[] = { 0x01, 0x02, 0x03 ,0x04, 0x05, 0x06 ,0x07, 0x08, 0x03 ,0x01, 0x02, 0x03 ,0x01, 0x02, 0x03 ,0x01, 0x02, 0x03 ,0x19,0x20};
+
 //------------ lib depended AREA 
 #define HUB_ID   0xAB
 #define DEVICE_ID   0xCB
@@ -46,6 +48,17 @@ uint8_t txData[] = {0x99,0x99,0x88,0x88,0x99,0x99};
 #define FREQUENCY   RF69_868MHZ
 #define ENCRYPTKEY    "key"
 
+
+/* Private function prototypes -----------------------------------------------*/
+//#define LED_GPIO_PORT  (GPIOC)
+//#define LED_GPIO_PIN GPIO_PIN_0
+/* Private functions ---------------------------------------------------------*/
+// RFM69 Pins and Ports
+#define RFM69_CS_PIN         GPIO_Pin_3
+#define RFM69_CS_PORT        GPIOB
+
+#define RFM69_RESET_PIN      GPIO_Pin_4
+#define RFM69_RESET_PORT     GPIOB
 
 // RFM69 Registers
 #define REG_OPMODE           0x01
@@ -58,28 +71,71 @@ uint8_t txData[] = {0x99,0x99,0x88,0x88,0x99,0x99};
 #define MODE_STDBY           0x04
 #define MODE_TX              0x0C
 #define MODE_RX              0x10
-/* Private variables ---------------------------------------------------------*/
-
-/* Private function prototypes -----------------------------------------------*/
-
-/* Private functions ---------------------------------------------------------*/
-//-------------------------------------------------
-// SPI initialization
-//-------------------------------------------------
-//-------------------------------------------------
-
 
 
 void SPI_Init_Config(void) {
-
-
-  
-     SPI_Init(SPI1,SPI_FirstBit_MSB, SPI_BaudRatePrescaler_2, SPI_Mode_Master, SPI_CPOL_Low,SPI_CPHA_1Edge, (SPI_Direction_TypeDef)SPI_Direction_Tx, SPI_NSS_Soft,(uint8_t)0x07);
-
+    SPI_Init(SPI1,SPI_FirstBit_MSB, SPI_BaudRatePrescaler_2, SPI_Mode_Master, SPI_CPOL_Low,SPI_CPHA_1Edge, (SPI_Direction_TypeDef)SPI_Direction_Tx, SPI_NSS_Soft,(uint8_t)0x07);
+    // Enable SPI
     SPI_Cmd(SPI1, ENABLE);
 }
 
+
+
+                
+                
+
+void CheckButtons(void) {
+    uint8_t button_state = ~GPIO_ReadInputData(GPIOA) & (GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5);
+    uint8_t button_code = 0;
+   // if (DebounceButton(GPIO_Pin_2)) button_state = GPIO_Pin_2;
+    //else if (DebounceButton(GPIO_Pin_3)) button_state = GPIO_Pin_3;
+    //else if (DebounceButton(GPIO_Pin_4)) button_state = GPIO_Pin_4;
+    //else if (DebounceButton(GPIO_Pin_5)) button_state = GPIO_Pin_5;
+
+    switch (button_state) {
+        case GPIO_Pin_2:
+            GPIO_SetBits(GPIOC, GPIO_Pin_2);
+            GPIO_ResetBits(GPIOC, GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5);
+                button_code = 0x01;
+            break;
+        case GPIO_Pin_3:
+            GPIO_SetBits(GPIOC, GPIO_Pin_3);
+            GPIO_ResetBits(GPIOC, GPIO_Pin_2 | GPIO_Pin_4 | GPIO_Pin_5);
+                button_code = 0x02;
+            break;
+        case GPIO_Pin_4:
+            GPIO_SetBits(GPIOC, GPIO_Pin_4);
+            GPIO_ResetBits(GPIOC, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_5);
+                button_code = 0x03;
+            break;
+        case GPIO_Pin_5:
+            GPIO_SetBits(GPIOC, GPIO_Pin_5);
+            GPIO_ResetBits(GPIOC, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4);
+                 button_code = 0x04;
+            break;
+        default:
+            GPIO_ResetBits(GPIOC, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5);
+            break;
+    }
+        
+
+     if (button_code) {
+       data_to_transmit[0] = button_code;
+       send(DEVICE_ID, (uint8_t*)&data_to_transmit, sizeof(button_code), FALSE, TRUE);
+    }
+}
+
+
+int rfm_freq = 0;
+uint8_t rxLength = 0;
+uint8_t arrareg[10] = {0};
+//uint8_t arraFIFO[31] = {0};
+   char re_msb = 0;
+   char re_lsb = 0;
+     int re_msb_f = 0;
+   int re_lsb_f = 0;
     
+
 /**
   * @brief  Main program.
   * @param  None
@@ -89,11 +145,12 @@ void main(void)
 {
   /* Infinite loop */ 
   // -------------------------------------------------------------------------
-  // Init FOR CLK&SPI&GPIO 
+  // Init FOR SPI&GPIO 
   // -------------------------------------------------------------------------
   
    CLK_HSICmd(ENABLE);
-  
+   
+   
    CLK_SYSCLKSourceConfig(CLK_SYSCLKSource_HSI);
    CLK_PeripheralClockConfig(CLK_Peripheral_SPI1,ENABLE);
    CLK_SYSCLKDivConfig(CLK_SYSCLKDiv_8);
@@ -112,14 +169,15 @@ void main(void)
    GPIO_Init(GPIOC, GPIO_Pin_0,  GPIO_Mode_In_FL_No_IT); // DIO_0 
    
    GPIO_Init(GPIOA, GPIO_Pin_5, GPIO_Mode_In_PU_No_IT); // Button Pin
-  // -------------------------------------------------------------------------
-  // Init FOR CLK&SPI&GPIO 
-  // -------------------------------------------------------------------------
-  
    
- 
+   
+    GPIO_Init(GPIOA, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5, GPIO_Mode_In_PU_No_IT); // 4 Buttons PA2-PA5
+    GPIO_Init(GPIOC, GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5, GPIO_Mode_Out_PP_Low_Fast); // 4 LEDs 
 
+
+   
    /* RESET PIN RFM69 */
+   GPIO_Init(GPIOB, GPIO_Pin_4, GPIO_Mode_Out_PP_Low_Fast);
    GPIOD->ODR |= GPIO_Pin_3;
    for (uint16_t i = 0; i<1600; i++) nop();      //Delay >100us (for 16 MHz)
    GPIO_Init(GPIOB, GPIO_Pin_4, GPIO_Mode_In_FL_No_IT);
@@ -130,22 +188,17 @@ void main(void)
     if (rfm69_init(FREQUENCY, HUB_ID, NETWORKID)) {
 		GPIO_SetBits(GPIOC, (GPIO_Pin_TypeDef)GPIO_Pin_6); // ININT OK 
 	} else {
-		GPIO_ResetBits(GPIOC, (GPIO_Pin_TypeDef)GPIO_Pin_6); // INIT FAIL 
+		GPIO_ResetBits(GPIOC, (GPIO_Pin_TypeDef)GPIO_Pin_6); // FAIL INIT
 	}
 
 
-    char data_to_transmit[] = { 0x01, 0x02, 0x03 ,0x04, 0x05, 0x06 ,0x07, 0x08, 0x03 ,0x01, 0x02, 0x03 ,0x01, 0x02, 0x03 ,0x01, 0x02, 0x03 ,0x19,0x20};
-    
-
   while (1)
   {
-    // TODO : Debouncing & interrupt handling
-     if (GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_5 ) == RESET) { 
-          GPIO_SetBits(GPIOC, (GPIO_Pin_TypeDef)GPIO_Pin_6);
-          send(DEVICE_ID, (uint8_t*) &data_to_transmit, sizeof(data_to_transmit),FALSE,TRUE);
-        } else {
-           GPIO_ResetBits(GPIOC, (GPIO_Pin_TypeDef)GPIO_Pin_6);
-        } 
+
+    
+    CheckButtons();
+    
+  
   }
 }
 

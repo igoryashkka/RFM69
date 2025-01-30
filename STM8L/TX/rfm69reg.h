@@ -172,6 +172,11 @@
 #define RF_BITRATEMSB_200KBPS         0x00
 #define RF_BITRATELSB_200KBPS         0xa0
 
+   
+   
+#define RF_BITRATEMSB_84000           0x01
+#define RF_BITRATELSB_84000           0x7D
+   
 
 // RegFdev - frequency deviation (Hz)
 #define RF_FDEVMSB_2000             0x00

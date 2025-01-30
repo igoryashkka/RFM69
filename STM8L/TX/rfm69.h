@@ -11,18 +11,8 @@
 #include "stm8l15x.h"
 #include "rfm69reg.h"
 
-#define RFM69_SELECT_GPIO RFM_NSEL_GPIO_Port
-#define RFM69_SELECT_PIN RFM_NSEL_Pin
-
-#define RFM69_RESET_GPIO RFM_RESET_GPIO_Port
-#define RFM69_RESET_PIN RFM_RESET_Pin
-
 #define RFM69_CS_PIN         GPIO_Pin_3
 #define RFM69_CS_PORT        GPIOB
-
-#define RFM69_RESET_PIN      GPIO_Pin_4
-#define RFM69_RESET_PORT     GPIOB
-
 #define NSS_PIN_RESET GPIO_ResetBits(RFM69_CS_PORT, RFM69_CS_PIN)//GPIOB->ODR &= (uint8_t)(~GPIO_Pin_3)//; 
 #define NSS_PIN_SET   GPIO_SetBits(RFM69_CS_PORT, RFM69_CS_PIN)//GPIOB->ODR |= GPIO_Pin_3;
 
@@ -46,6 +36,10 @@
 #define RF69_CSMA_LIMIT_MS 1000
 #define RF69_BROADCAST_ADDR 255
 
+#define RFM69_RESET_GPIO RFM_RESET_GPIO_Port
+#define RFM69_RESET_PIN RFM_RESET_Pin
+
+//#define RFM69_SPI_PORT hspi1
 
 // available frequency bands
 #define RF69_315MHZ            31 // non trivial values to avoid misconfiguration
@@ -56,26 +50,25 @@
 #define RF69_MAX_DATA_LEN       61
 
 
+
+
 unsigned char SPICmd8bit(unsigned char WrPara);
 unsigned char SPIRead(unsigned char adr);
-void SPIWrite(unsigned char adr, unsigned char WrPara); 
-
-
-
+void SPIWrite(unsigned char adr, unsigned char WrPara);
 bool rfm69_init(uint8_t freqBand, uint8_t nodeID, uint8_t networkID);
-void setMode(uint8_t newMode, bool waitForReady);
-void setAddress(uint8_t addr);
+uint32_t send(uint8_t toAddress, uint8_t *buffer, uint16_t bufferSize,bool requestACK, bool sendACK);
 
 
 void setHighPowerRegs(bool onOff);
 void setPowerLevel(uint8_t powerLevel);
-int16_t readRSSI(bool forceTrigger);
-bool read_data(char *data);
-bool waitForResponce(char *data );
+void setAddress(uint8_t addr);
+void setMode(uint8_t newMode, bool waitForReady);
 void receiveBegin();
-uint32_t send(uint8_t toAddress, uint8_t *buffer, uint16_t bufferSize,bool requestACK, bool sendACK);
+uint8_t waitForResponce(char *data);
+uint8_t readData(char *data);
 
 void Delay(uint16_t nCount);
 
 
+void Delay(uint16_t nCount);
 #endif /* INC_RFM69_H_ */

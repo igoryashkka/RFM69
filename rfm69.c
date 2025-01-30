@@ -94,8 +94,8 @@ bool rfm69_init(uint8_t freqBand, uint8_t nodeID, uint8_t networkID) {
 			/* 0x02 */{ REG_DATAMODUL, RF_DATAMODUL_DATAMODE_PACKET| RF_DATAMODUL_MODULATIONTYPE_FSK| RF_DATAMODUL_MODULATIONSHAPING_00 }, // no shaping
                         /* 0x03 */{ REG_BITRATEMSB, RF_BITRATEMSB_4800 }, // default: 4.8 KBPS
 			/* 0x04 */{ REG_BITRATELSB, RF_BITRATEMSB_4800 },
-			/* 0x05 */{ REG_FDEVMSB, RF_FDEVMSB_300000 }, // default: 5KHz, (FDEV + BitRate / 2 <= 500KHz)
-			/* 0x06 */{ REG_FDEVLSB, RF_FDEVLSB_300000 },
+			/* 0x05 */{ REG_FDEVMSB, RF_FDEVMSB_150000 }, // default: 5KHz, (FDEV + BitRate / 2 <= 500KHz)
+			/* 0x06 */{ REG_FDEVLSB, RF_FDEVLSB_150000 },
 
 			/* 0x07 */{ REG_FRFMSB, (uint8_t) (freqBand == RF69_315MHZ ?RF_FRFMSB_315 :(freqBand == RF69_433MHZ ?RF_FRFMSB_433 :(freqBand == RF69_868MHZ ?RF_FRFMSB_868 :RF_FRFMSB_915))) },
 			/* 0x08 */{ REG_FRFMID, (uint8_t) (freqBand == RF69_315MHZ ?RF_FRFMID_315 :(freqBand == RF69_433MHZ ?RF_FRFMID_433 :(freqBand == RF69_868MHZ ?RF_FRFMID_868 :RF_FRFMID_915))) },
@@ -117,7 +117,8 @@ bool rfm69_init(uint8_t freqBand, uint8_t nodeID, uint8_t networkID) {
 					/* 0x26 */{ REG_DIOMAPPING2, RF_DIOMAPPING2_CLKOUT_OFF }, // DIO5 ClkOut disable for power saving
 					/* 0x28 */{ REG_IRQFLAGS2, RF_IRQFLAGS2_FIFOOVERRUN }, // writing to this bit ensures that the FIFO & status flags are reset
 					/* 0x29 */{ REG_RSSITHRESH, 220 }, // must be set to dBm = (-Sensitivity / 2), default is 0xE4 = 228 so -114dBm
-				        /* 0x2D */ { REG_PREAMBLELSB, RF_PREAMBLESIZE_LSB_VALUE }, // default 3 preamble bytes 0xAAAAAA
+				        				        /* 0x2D */ { REG_PREAMBLEMSB, 0x0 }, // default 3 preamble bytes 0xAAAAAA
+                                        /* 0x2D */ { REG_PREAMBLELSB, 0x80 }, // default 3 preamble bytes 0xAAAAAA
 					/* 0x2E */{ REG_SYNCCONFIG, RF_SYNC_ON
 							| RF_SYNC_FIFOFILL_AUTO | RF_SYNC_SIZE_2
 							| RF_SYNC_TOL_0 },
