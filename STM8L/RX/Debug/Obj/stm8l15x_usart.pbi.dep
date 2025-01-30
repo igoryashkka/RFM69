@@ -1,0 +1,35 @@
+stm8l15x_usart.pbi: \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\src\stm8l15x_usart.c \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_usart.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc/stm8l15x.h \
+  C:\Users\igor4\trash\Documents\ajaxTZ_Rec\stm8l15x_conf.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_adc.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_aes.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_beep.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_clk.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_comp.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_dac.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_dma.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_exti.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_flash.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_gpio.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_i2c.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_irtim.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_itc.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_iwdg.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_lcd.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_pwr.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_rst.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_rtc.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_spi.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_syscfg.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_tim1.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_tim2.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_tim3.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_tim4.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_tim5.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_wfe.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc\stm8l15x_wwdg.h \
+  C:\Program\ Files\ (x86)\IAR\ Systems\Embedded\ Workbench\ 8.3\stm8\inc\c\intrinsics.h \
+  C:\Users\igor4\trash\Downloads\en.stsw-stm8016\STM8L15x-16x-05x-AL31-L_StdPeriph_Lib\Libraries\STM8L15x_StdPeriph_Driver\inc/stm8l15x_clk.h
