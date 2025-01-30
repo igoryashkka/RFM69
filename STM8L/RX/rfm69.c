@@ -1,25 +1,6 @@
-
 #include "rfm69.h"
+#include "string.h"
 
-//#define rfm_spi hspi1
-#define RFM69_XO               32000000    // /< Internal clock frequency [Hz]
-#define RFM69_FSTEP            61.03515625 // /< Step width of synthesizer [Hz]
-#define CSMA_LIMIT              -90 // upper RX signal sensitivity threshold in dBm for carrier sense access
-// Common ----------------------------------------
-#define RF69_MODE_SLEEP         0 // XTAL OFF
-#define RF69_MODE_STANDBY       1 // XTAL ON
-#define RF69_MODE_SYNTH         2 // PLL ON
-#define RF69_MODE_RX            3 // RX MODE
-#define RF69_MODE_TX            4 // TX MODE
-// Common ----------------------------------------
-#define COURSE_TEMP_COEF    -90 // puts the temperature reading in the ballpark, user can fine tune the returned value
-
-#define RF69_TX_LIMIT_MS   1000
-// TWS: define CTLbyte bits
-#define RFM69_CTL_SENDACK   0x80
-#define RFM69_CTL_REQACK    0x40
-#define RF69_CSMA_LIMIT_MS 1000
-#define RF69_BROADCAST_ADDR 255
 
 volatile uint8_t _mode;        // current transceiver state
 volatile bool _inISR;
@@ -40,13 +21,14 @@ uint8_t _powerLevel;
 uint8_t _address;
 uint8_t _interruptPin;
 uint8_t _interruptNum;
-int _reg_val_28 = 0;int _reg_val_27 = 0;
 
 bool _isRFM69HW = FALSE;
+bool _promiscuousMode;
+uint8_t frame[256];
+
 
 void Delay(uint16_t nCount)
 {
-  /* Decrement nCount value */
   while (nCount != 0)
   {
     nCount--;
@@ -54,6 +36,15 @@ void Delay(uint16_t nCount)
 }
 
 
+
+// ------------------------------------------------------------------------------------------
+//  Simlpe Funcs ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
+#define SPI_CS_PORT             GPIOB
+#define SPI_CS_PIN              GPIO_Pin_3
+
+#define SPI_CS_Low              GPIO_ResetBits(SPI_CS_PORT , SPI_CS_PIN)
+#define SPI_CS_High             GPIO_SetBits(SPI_CS_PORT, SPI_CS_PIN)
 
 unsigned char SPICmd8bit(unsigned char WrPara)
 { 
@@ -69,25 +60,26 @@ unsigned char SPIRead(unsigned char adr)
   unsigned char data;
   SPI_CS_Low;
   data = SPICmd8bit(adr);              //Send address first
-  data = SPICmd8bit(0x00);  
+  data = SPICmd8bit(0x00);             // Send 0x00 dumny bytes, to read data
   SPI_CS_High;
   return data;
 }
 void SPIWrite(unsigned char adr, unsigned char WrPara)  
 {
-  //unsigned char data;
   SPI_CS_Low;						
-  SPICmd8bit(adr|0x80);		//???????
-  SPICmd8bit(WrPara);           //????
-    SPI_CS_High;
+  SPICmd8bit(adr|0x80);		
+  SPICmd8bit(WrPara);       
+  SPI_CS_High;
 }
+ 
+/*// ------------------------------------------------------------------------------------------
+ 
+ - INIT FUNC 
+
+//
+*/
 
 bool rfm69_init(uint8_t freqBand, uint8_t nodeID, uint8_t networkID) {
-  
-      //rfm69_up_reset_pin();
-      //Delay_LIB(0xffff);
-      //rfm69_down_reset_pin();
-    // magic = SX1278Read(0x01); //  MAGIC READ
     
 	const uint8_t CONFIG[][2] =
 			{
@@ -107,7 +99,7 @@ bool rfm69_init(uint8_t freqBand, uint8_t nodeID, uint8_t networkID) {
 					// +13dBm formula: Pout = -18 + OutputPower (with PA0 or PA1**)
 					// +17dBm formula: Pout = -14 + OutputPower (with PA1 and PA2)**
 					// +20dBm formula: Pout = -11 + OutputPower (with PA1 and PA2)** and high power PA settings (section 3.3.7 in datasheet)
-				  { REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF| RF_PALEVEL_PA2_OFF | RF_PALEVEL_OUTPUTPOWER_11111 },
+				  { REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_ON| RF_PALEVEL_PA2_ON | RF_PALEVEL_OUTPUTPOWER_11111 },
 			/* 0x13 */ { REG_OCP, RF_OCP_ON | RF_OCP_TRIM_95 }, // over current protection (default is 95mA)
 
 					// RXBW defaults are { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_5} (RxBw: 10.4KHz)
@@ -138,33 +130,178 @@ bool rfm69_init(uint8_t freqBand, uint8_t nodeID, uint8_t networkID) {
    do {SPIWrite(REG_SYNCVALUE1,0xAA);} while (SPIRead(REG_SYNCVALUE1) != 0xaa);
    do {SPIWrite(REG_SYNCVALUE1, 0x55);} while (SPIRead(REG_SYNCVALUE1) != 0x55);
                                     
-
-        //reg_val_28 = SPIRead(0x28);
-        //reg_val_27 = SPIRead(0x27);
         
 	for (uint8_t i = 0; CONFIG[i][0] != 255; i++) {
 		SPIWrite(CONFIG[i][0], CONFIG[i][1]);
 	}
-        
-        //        reg_val_MSB = SPIRead(0x03);
-        //reg_val_LSB = SPIRead(0x04);
-       // reg_val_28 = SPIRead(0x28);
-       // reg_val_27 = SPIRead(0x27);
+
 
     setMode(RF69_MODE_STANDBY, FALSE);
-        
-     //      reg_val_28 = SPIRead(0x28);
-      //  reg_val_27 = SPIRead(0x27);
 
-	while (((SPIRead(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00)); // wait for ModeReady
+
+	while (((SPIRead(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00)); // wait for ModeReady 
 
     setHighPowerRegs(TRUE);
-      setPowerLevel(13);
+    setPowerLevel(25);
 	setAddress(nodeID);
         
         
 	return TRUE;
 }
+// ------------------------------------------------------------------------------------------
+
+
+          
+void setFrequency(uint32_t freqHz) {
+	uint8_t oldMode = _mode;
+	if (oldMode == RF69_MODE_TX) {
+		setMode(RF69_MODE_RX, FALSE);
+	}
+	freqHz /= RFM69_FSTEP; 
+	RFM69_WriteReg_LIB(REG_FRFMSB, freqHz >> 16);
+	RFM69_WriteReg_LIB(REG_FRFMID, freqHz >> 8);
+	RFM69_WriteReg_LIB(REG_FRFLSB, freqHz);
+	if (oldMode == RF69_MODE_RX) {
+		setMode(RF69_MODE_SYNTH, FALSE);
+	}
+	setMode(oldMode, FALSE);
+}
+
+/* -----------------------------------------------------------
+void setMode(uint8_t newMode, bool waitForReady) 
+ - func , check for updating only MODES bits , set mode 
+ - global var : _mode
+*/
+
+void setMode(uint8_t newMode, bool waitForReady) {
+	if (newMode == _mode)
+		return;
+
+	switch (newMode) {
+	case RF69_MODE_TX:
+		SPIWrite(REG_OPMODE,(SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER);
+		break;
+	case RF69_MODE_RX:
+		SPIWrite(REG_OPMODE, (SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER);
+		break;
+	case RF69_MODE_SYNTH:
+		SPIWrite(REG_OPMODE,(SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER);
+		break;
+	case RF69_MODE_STANDBY:
+		SPIWrite(REG_OPMODE, (SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY);
+		break;
+	case RF69_MODE_SLEEP:
+		SPIWrite(REG_OPMODE, (SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP);
+		break;
+	default:
+		return;
+	}
+
+	if (waitForReady) {
+		while ((SPIRead(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // wait for ModeReady
+	}
+
+	_mode = newMode;
+}
+// -----------------------------------------------------------
+
+
+
+uint8_t buff_test[10] = {0};
+
+
+// -------------------- SEND FUNC START  -------------------- // 
+uint32_t send(uint8_t toAddress, uint8_t *buffer, uint16_t bufferSize,bool requestACK, bool sendACK) {
+	setMode(RF69_MODE_STANDBY, TRUE); // turn off receiver to prevent reception while filling fifo
+	SPIWrite(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00); // DIO0 is "Packet Sent"
+
+	// control byte
+	if (bufferSize > 61) {
+		bufferSize = 61;
+	}
+
+        
+	Delay_LIB(0xffff);
+	// write to FIFO size of data
+    SPIWrite(REG_FIFO, bufferSize);
+	// write to FIFO data
+    Delay_LIB(0xffff);
+    for (uint8_t i = 0; i < bufferSize; i++) {
+	SPIWrite(REG_FIFO,buffer[i]);
+    }
+	Delay_LIB(0xffff);
+        
+	// no need to wait for transmit mode to be ready since its handled by the radio
+	setMode(RF69_MODE_TX, TRUE);
+
+	//while (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_0) == RESET); // wait UP DIO_0 - transiving is over  PacketSent
+    while (!(SPIRead(REG_IRQFLAGS2) & (1 << 3) )) {}; // wait for DIO0 to be high // PacketSent
+       
+	setMode(RF69_MODE_STANDBY,TRUE);
+
+
+	return 1;
+}
+// -------------------- SEND FUNC END  -------------------- // 
+
+uint8_t arr_test[10] = {0};
+
+bool readData(char *data) {
+	
+	//if (_mode == RF69_MODE_RX && (SPIRead(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY)) {
+
+		setMode(RF69_MODE_STANDBY,TRUE);
+
+                
+                
+        for (uint8_t i = 0; i < 10; i++) {
+		    arr_test[i] = SPIRead(0x00);
+	    }
+
+
+		setMode(RF69_MODE_RX, TRUE);
+
+	return FALSE;
+}
+
+// -------------------- waitForResponce FUNC START  -------------------- // 
+bool waitForResponce(Payload *data, uint32_t timeout) {
+	
+	while (1) {
+		if (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_0) == RESET) {
+			continue;
+		}
+
+		if (readData(data)) {
+			return TRUE;
+		}
+	
+        }
+}
+
+// -------------------- waitForResponce FUNC END  -------------------- // 
+
+// -------------------- receiveBegin FUNCs START  -------------------- // 
+void receiveBegin() {
+	if (SPIRead(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY) {
+		SPIWrite(REG_PACKETCONFIG2,(SPIRead(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART); // avoid RX deadlocks
+	}
+	//SPIWrite(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01); // set DIO0 to "PAYLOADREADY" in receive mode
+	setMode(RF69_MODE_RX, FALSE);
+}
+
+void waitForResponce(char *data){
+
+   while (!(SPIRead(REG_IRQFLAGS2) & (1 << 2))) {}; // // PAYLOADREADY
+
+    readData(data);
+}
+
+
+
+// -------------------- receiveBegin FUNCs END  -------------------- // 
+
+
 
 
 
@@ -186,161 +323,3 @@ void setAddress(uint8_t addr) {
 	SPIWrite(REG_NODEADRS, _address);
 }
 
-
-void setMode(uint8_t newMode, bool waitForReady) {
-	if (newMode == _mode)
-		return;
-
-	switch (newMode) {
-	case RF69_MODE_TX:
-		SPIWrite(REG_OPMODE,(SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER);
-		//if (_isRFM69HW)       //  can be unused for RFM69CW
-		//setHighPowerRegs(true); //  can be unused for RFM69CW
-		break;
-	case RF69_MODE_RX:
-		SPIWrite(REG_OPMODE, (SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER);
-		//if (_isRFM69HW)            //  can be unused for RFM69CW
-		//	setHighPowerRegs(FALSE); //  can be unused for RFM69CW
-		break;
-	case RF69_MODE_SYNTH:
-		SPIWrite(REG_OPMODE,(SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER);
-		break;
-	case RF69_MODE_STANDBY:
-		SPIWrite(REG_OPMODE, (SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY);
-		break;
-	case RF69_MODE_SLEEP:
-		SPIWrite(REG_OPMODE, (SPIRead(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP);
-		break;
-	default:
-		return;
-	}
-
-        _reg_val_28 = SPIRead(0x28);
-        _reg_val_27 = SPIRead(0x27);
-        
-        
-	if (waitForReady) {
-		while ((SPIRead(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // wait for ModeReady
-	}
-
-	_mode = newMode;
-}
-
-
-
-
-// -------------------- SEND FUNC START  -------------------- // 
-uint32_t send(uint8_t toAddress, uint8_t *buffer, uint16_t bufferSize,bool requestACK, bool sendACK) {
-	setMode(RF69_MODE_STANDBY, TRUE); // turn off receiver to prevent reception while filling fifo
-	SPIWrite(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00); // DIO0 is "Packet Sent"
-
-	// control byte
-	if (bufferSize > 61) {
-		bufferSize = 61;
-	}
-
-	/*uint8_t CTLbyte = 0x00;
-	if (sendACK) {
-		CTLbyte = RFM69_CTL_SENDACK;
-	} else if (requestACK) {
-		CTLbyte = RFM69_CTL_REQACK;
-	}*/
-
-	//uint8_t cmd[4] = {(uint8_t) (bufferSize + 3),toAddress, _address, CTLbyte};
-        SPIWrite(REG_FIFO, bufferSize);
-	// write to FIFO
-	//rfm69_select();  
-        for (uint8_t i = 0; i < bufferSize; i++) {
-		SPIWrite(REG_FIFO,buffer[i]);
-	}
-        //rfm69_release();
-        
-	// no need to wait for transmit mode to be ready since its handled by the radio
-	setMode(RF69_MODE_TX, TRUE);
-
-       _reg_val_28 = SPIRead(0x28);
-         _reg_val_27 = SPIRead(0x27);
-	 _reg_val_27 = SPIRead(0x1);
-	//while (GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_0) == RESET); // wait UP DIO_0 - transiving is over 
-      while (!(SPIRead(REG_IRQFLAGS2) & (1 << 3) )) {}; // wait for DIO0 to be high
-        //clear_fifo();
-        _reg_val_28 = SPIRead(0x28);
-         _reg_val_27 = SPIRead(0x27);
-	 _reg_val_27 = SPIRead(0x1);
-        _reg_val_27 = SPIRead(0x1);
-	setMode(RF69_MODE_STANDBY,TRUE);
-	//receiveBegin();
-
-	return 1;
-}
-// -------------------- SEND FUNC END  -------------------- // 
-
-
-
-void receiveBegin() {
-	if (SPIRead(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY) {
-		SPIWrite(REG_PACKETCONFIG2,(SPIRead(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART); // avoid RX deadlocks
-	}
-	//SPIWrite(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01); // set DIO0 to "PAYLOADREADY" in receive mode
-	setMode(RF69_MODE_RX, FALSE);
-}
-
-
-void waitForResponce(char *data){
-
-   while (!(SPIRead(REG_IRQFLAGS2) & (1 << 2))) {}; // // PAYLOADREADY
-
-    readData(data);
-}
-
-
-   uint8_t arr_test[10] = {0};
-
-bool readData(char *data) {
-	//if (_mode == RF69_MODE_RX && (SPIRead(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY)) {
-
-		//data->targetId = data->senderId = data->ctlByte = 0xFF;
-
-		//data->signalStrength = readRSSI(false);
-		//memset(data->data, 0, RF69_MAX_DATA_LEN);
-
-		// ????? ????
-		setMode(RF69_MODE_STANDBY, /*waitForReady=*/TRUE);
-		//uint8_t zero_byte = 0;
-		//uint8_t read_data = REG_FIFO & 0x7F;
-
-		//rfm69_select();
-		//HAL_SPI_Transmit(&rfm_spi, &read_data, 1, 100);
-		//HAL_SPI_TransmitReceive(&rfm_spi, (uint8_t*) &zero_byte,
-		//		(uint8_t*) &data->size, 1, 100);
-
-		//HAL_StatusTypeDef errorCode = HAL_SPI_Receive(&RFM69_SPI_PORT, *&frame,
-		//		data->size, HAL_MAX_DELAY);
-
-             
-                
-                
-        for (uint8_t i = 0; i < 10; i++) {
-		    arr_test[i] = SPIRead(0x00);
-	    }
-
-
-		//rfm69_release();
-		setMode(RF69_MODE_RX, TRUE);
-
-		//?????? ????
-            /*
-		if (errorCode == HAL_OK) {
-			data->targetId = frame[0];
-			data->senderId = frame[1];
-			data->ctlByte = frame[2];
-			for (int8_t i = 3; i < data->size; i++) {
-				data->data[i - 3] = frame[i];
-			}
-			writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01); // set DIO0 to "PAYLOADREADY" in receive mode
-			setMode(RF69_MODE_RX, false);
-			return true;
-		}*/
-	//}
-	return FALSE;
-}
